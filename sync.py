@@ -9,8 +9,8 @@ def md5(fname):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
 
-baseFileRoot = r"C:\Users\yalina\Desktop\SenkronA"
-mirrorFileRoot = r"C:\Users\yalina\Desktop\SenkronB"
+baseFileRoot = r"C:\Users\yalina\Desktop\Disorganized"
+mirrorFileRoot = r"E:\Disorganized"
 
 for root, dirs, files in os.walk(baseFileRoot):
     for dir in dirs:

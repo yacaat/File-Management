@@ -3,6 +3,7 @@ from datetime import datetime
 import time
 import collections
 import hashlib
+import threading
 
 def md5(fname):
     hash_md5 = hashlib.md5()
@@ -44,11 +45,22 @@ def get_size(start_path):
             total_size += os.path.getsize(fp)
     return total_size
 
+def file_worker (file, root):
+    name = os.path.join(root, file)
+    size = os.stat(name).st_size
+    date = datetime.utcfromtimestamp(os.stat(name).st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+    searchFiles.append(File(name, size, date))
+    try:
+        searchFilesHashes.append((os.path.join(root, file), md5(name)))
+    except Exception as e:
+        print('Failed to get hash: ' + str(e))
+
 PATH = r"C:\Users\yalina\Desktop"
 FILE_COUNT = sum(len(files) for _, _, files in os.walk(PATH))
 DASH = '-' * 40
 counter = 0
 print("Number of files to be checked: {}".format(FILE_COUNT))
+threads = []
 time.sleep(1)
 
 searchDirectories = []
@@ -56,24 +68,20 @@ searchFiles = []
 searchFilesHashes = []
 
 
+
 for root, dirs, files in os.walk(PATH):
+    threads[:] = []
     for dir in dirs:
-        #if get_size(root + '\\' + dir) < 10000:
         searchDirectories.append(Directory(root + "\\" + dir, get_size(root + '\\' + dir)))
     for file in files:
-        name = os.path.join(root, file)
-        size = os.stat(name).st_size
-        date = datetime.utcfromtimestamp(os.stat(name).st_mtime).strftime('%Y-%m-%d %H:%M:%S')
-        searchFiles.append(File(name, size, date))
-        #searchFilesHashes.append(file + str(size) + date)
-        #searchFilesHashes.append(file + "-" + md5(name))
-        try:
-            searchFilesHashes.append((os.path.join(root, file), md5(name)))
-        except Exception as e:
-            print('Failed to get hash: ' + str(e))
+        t = threading.Thread(target=file_worker,args=(file, root))
+        t.start()
+        threads.append(t)
         if len(searchFiles) % 100 == 99:
             print("%{:<3} [ {:<100} ]".format(int(100 * len(searchFiles) / FILE_COUNT), int(100 * len(searchFiles) / FILE_COUNT)*"="))
-            #os.system('cls')
+    for t in threads:
+        t.join()
+
 
 
 
@@ -82,36 +90,6 @@ for root, dirs, files in os.walk(PATH):
 
 os.system('cls')
 print("Number of files has been checked: {}".format(FILE_COUNT))
-# print("Very small directories to be check:")
-# print(DASH)
-# print("{:<10} | {:<19}".format("Size", "Last Date"))
-# print(DASH)
-# for directory in searchDirectories:
-#     if directory.size == 0:
-#         directory.display()
-#         # try:
-#         #     os.rmdir(directory.name)
-#         # except:
-#         #     print(directory.name + "PROBLEM VAR")
-#         counter = counter + 1
-# print(DASH)
-# print("Total: {} directories".format(counter))
-
-# print("\nVery small files to be check:")
-# print(DASH)
-# print("{:<10} | {:<19} | {}".format("Size", "Last Date", "Name"))
-# print(DASH)
-# for file in searchFiles:
-#     file.display()
-
-# for file in searchFiles:
-#     for file2 in searchFiles:
-#         if file.__eq__(file2):
-#             if not file.name == file2.name:
-#                 file.display()
-#                 file2.display()
-#                 print(DASH)
-
 hashes = []
 for item in searchFilesHashes:
     hashes.append(item[1])
